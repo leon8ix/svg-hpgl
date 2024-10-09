@@ -1,6 +1,6 @@
 {
 	"name": "svg-hpgl",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Apackage for converting SVG to HP-GL, includes segmenting of curves",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
