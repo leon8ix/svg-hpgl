@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>SVG to HP-GL Test Page</title>
+		<script type="module" defer>
+			import { buildHPGL, svgToHPGL, drawHPGL } from './src/index.ts';
+			window.buildHPGL = buildHPGL;
+			window.svgToHPGL = svgToHPGL;
+
+			const input = document.getElementById('input');
+			const output = document.getElementById('output');
+			const svg = document.getElementById('svg');
+			const canvas = document.getElementById('canvas');
+
+			input.value = svg.innerHTML;
+
+			function update() {
+				svg.innerHTML = input.value;
+				const hpglProg = svgToHPGL(input.value);
+				const hpglStr = buildHPGL(hpglProg);
+				// console.log(hpglStr, hpglProg);
+				output.innerText = hpglStr;
+				drawHPGL(canvas, hpglProg, 297, 210);
+			}
+
+			input.addEventListener('input', update);
+			update();
+		</script>
+	</head>
+	<body>
+		<textarea id="input" cols="100" rows="16" style="width: 100%"></textarea>
+		<div style="display: flex; gap: 1em; margin: 1em 0">
+			<div id="svg">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					xmlns:xlink="http://www.w3.org/1999/xlink"
+					width="297"
+					height="210"
+					viewBox="0 0 297 210"
+				>
+					<rect x="0" y="0" width="297" height="210" fill="#ccc" />
+					<circle cx="50" cy="50" r="35" fill="none" stroke="red" transform="scale(0.5)" />
+					<g transform="rotate(10)">
+						<rect
+							x="100"
+							y="50"
+							width="76"
+							height="47"
+							rx="12"
+							fill="none"
+							stroke="red"
+							transform="translate(60 60)"
+						/>
+						<line x1="100" y1="100" x2="200" y2="100" stroke="red" />
+					</g>
+					<polyline points="0,210 50,160 25,170 25,130" stroke="red" fill="none" />
+					<path
+						d="M224.4,410.1L204,363s44.151-25.489,47.337,3.186,23.669,18.662,23.669,18L254.893,423.3Z"
+						transform="translate(-50 -330)"
+						stroke="blue"
+						fill="none"
+					/>
+				</svg>
+			</div>
+			<canvas id="canvas"></canvas>
+		</div>
+		<output id="output" style="word-break: break-all; display: block"></output>
+		<style>
+			svg,
+			canvas {
+				width: 38vw;
+				height: auto;
+			}
+		</style>
+		<!-- <rect
+                x="0.5"
+                y="0.5"
+                width="76"
+                height="47"
+                fill="none"
+                stroke="red"
+                transform="translate(28 22)"
+            /> -->
+		<!-- d="M224.4,410.1L204,363s44.151-25.489,47.337,3.186,23.669,18.662,23.669,18L254.893,423.3" -->
+	</body>
+</html>

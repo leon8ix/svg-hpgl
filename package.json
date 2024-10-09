@@ -1,0 +1,24 @@
+{
+	"name": "svg-hpgl",
+	"version": "0.1.0",
+	"description": "Apackage for converting SVG to HP-GL, includes segmenting of curves",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"dev": "vite"
+	},
+	"author": "8ix",
+	"license": "(private)",
+	"private": true,
+	"devDependencies": {
+		"@types/jsdom": "^21.1.7",
+		"typescript": "^5.6.2",
+		"vite": "^5.4.7"
+	},
+	"dependencies": {
+		"adaptive-bezier-curve": "^1.0.3",
+		"jsdom": "^25.0.0"
+	}
+}
