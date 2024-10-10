@@ -11,14 +11,16 @@
 
 			const input = document.getElementById('input');
 			const output = document.getElementById('output');
-			const svg = document.getElementById('svg');
+			const svgContainer = document.getElementById('svg');
 			const canvas = document.getElementById('canvas');
 
 			input.value = svg.innerHTML;
 
 			function update() {
-				svg.innerHTML = input.value;
-				const hpglProg = svgToHPGL(input.value);
+				svgContainer.innerHTML = input.value;
+				const svg = svgContainer.querySelector('svg');
+				if (!svg) return console.warn('Invalid SVG supplied');
+				const hpglProg = svgToHPGL(svg);
 				const hpglStr = buildHPGL(hpglProg);
 				// console.log(hpglStr, hpglProg);
 				output.innerText = hpglStr;

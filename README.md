@@ -2,7 +2,24 @@
 
 A node package for converting SVG to HP-GL. Splits curves into small segments.
 
+## ToDo
+
+-   Support for SVG path features: Q, T, A
+-   Scale, offset
+
 ## Versions
+
+### 0.2.0
+
+-   Restructured conversion function to
+    -   support different pens using querySelector
+    -   respect original element order
+-   Added utility function to retrieve all stroke colors in SVG for use with different pens
+-   Removed JSDOM, instead consumer should supply SVGSVGElement directly
+
+### 0.1.1
+
+-   Removed dist from gitignore, so repo can be used as package directly
 
 ### 0.1.0
 
@@ -18,5 +35,3 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
     -   Ellipse
     -   Rect
     -   Path (M, L, H, V, C, S, Z)
--   TODO: Support for SVG path features: Q, T, A
--   TODO: Scale, offset

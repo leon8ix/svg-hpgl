@@ -1,7 +1,7 @@
 {
 	"name": "svg-hpgl",
-	"version": "0.1.1",
-	"description": "Apackage for converting SVG to HP-GL, includes segmenting of curves",
+	"version": "0.2.0",
+	"description": "A node package for converting SVG to HP-GL. Breaks up any curves into small segments.",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -18,7 +18,6 @@
 		"vite": "^5.4.7"
 	},
 	"dependencies": {
-		"adaptive-bezier-curve": "^1.0.3",
-		"jsdom": "^25.0.0"
+		"adaptive-bezier-curve": "^1.0.3"
 	}
 }

@@ -1,8 +1,16 @@
-export type HPGLCommand = 'PU' | 'PD' | 'PA';
+export type HPGLCommand = 'PU' | 'PD' | 'PA' | `SP${number}`;
 export type HPGLInstruction = [HPGLCommand, ...number[]];
 export type HPGLProgram = HPGLInstruction[];
 export declare function buildHPGL(program: HPGLProgram, prefix?: string, suffix?: string): string;
-export declare function svgToHPGL(svgStr: string, segmentsPerUnit?: number): HPGLProgram;
+/** defaults to any stroked element, uses selector in this prio: selector > stroke > [stroke] */
+export type PenSelectors = {
+    pen: number;
+    /** [stroke], [stroke=magenta] or any other querySelector */
+    selector?: string;
+    /** should use values retrieved by getSvgStrokeColors */
+    stroke?: string;
+}[];
+export declare function svgToHPGL(svg: SVGSVGElement, segmentsPerUnit?: number, penSelectors?: PenSelectors): HPGLProgram;
 /** Implements and expects absolute coords (PA)  */
 export declare function hpglFindBBox(hpgl: HPGLProgram): {
     xMin: number;
@@ -13,4 +21,5 @@ export declare function hpglFindBBox(hpgl: HPGLProgram): {
     height: number;
 };
 export declare function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: number, height: number): void;
+export declare function getSvgStrokeColors(svg: SVGSVGElement): Set<string>;
 //# sourceMappingURL=index.d.ts.map
