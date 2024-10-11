@@ -13,14 +13,14 @@ const adaptive_bezier_curve_1 = __importDefault(require("adaptive-bezier-curve")
 function buildHPGL(program, prefix = '', suffix = '') {
     return prefix + program.map(([cmd, ...vals]) => cmd + vals.join(',') + ';').join('') + suffix;
 }
-function svgToHPGL(svg, segmentsPerUnit = 0.08, penSelectors = [{ pen: 1 }]) {
+function svgToHPGL(svg, pens = [{ pen: 1 }], { segmentsPerUnit = 1, scale = 1, offsetX = 0, offsetY = 0 }) {
     const hpgl = [['PA']];
-    penSelectors.forEach(({ pen, selector, stroke }) => {
+    pens.forEach(({ pen, selector, stroke }) => {
         hpgl.push([`SP${pen}`], ['PU']);
         svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
             if (!(el instanceof SVGGraphicsElement))
                 return;
-            const tf = getTransformer(el);
+            const tf = getTransformer(el, scale, offsetX, offsetY);
             if (el instanceof SVGLineElement) {
                 // <line>
                 hpgl.push(PU(tf, svgVal(el.x1), svgVal(el.y1)));
@@ -143,7 +143,7 @@ function svgToHPGL(svg, segmentsPerUnit = 0.08, penSelectors = [{ pen: 1 }]) {
     });
     return hpgl;
 }
-function getTransformer(element) {
+function getTransformer(element, scale = 1, offsetX = 0, offsetY = 0) {
     const svg = element.ownerSVGElement;
     if (!svg) {
         console.warn('Could not retrieve ownerSVGElement');
@@ -161,7 +161,7 @@ function getTransformer(element) {
     return (x, y) => {
         (point.x = x), (point.y = y);
         const pointT = point.matrixTransform(ctm);
-        return [Math.round(pointT.x), Math.round(pointT.y)];
+        return [Math.round(pointT.x * scale + offsetX), Math.round(pointT.y * scale + offsetY)];
     };
 }
 function svgVal(prop) {

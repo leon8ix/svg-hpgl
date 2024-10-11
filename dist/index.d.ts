@@ -10,7 +10,13 @@ export type PenSelectors = {
     /** should use values retrieved by getSvgStrokeColors */
     stroke?: string;
 }[];
-export declare function svgToHPGL(svg: SVGSVGElement, segmentsPerUnit?: number, penSelectors?: PenSelectors): HPGLProgram;
+type SVGtoHPGLOptions = {
+    segmentsPerUnit?: number;
+    scale?: number;
+    offsetX?: number;
+    offsetY?: number;
+};
+export declare function svgToHPGL(svg: SVGSVGElement, pens: PenSelectors | undefined, { segmentsPerUnit, scale, offsetX, offsetY }: SVGtoHPGLOptions): HPGLProgram;
 /** Implements and expects absolute coords (PA)  */
 export declare function hpglFindBBox(hpgl: HPGLProgram): {
     xMin: number;
@@ -22,4 +28,5 @@ export declare function hpglFindBBox(hpgl: HPGLProgram): {
 };
 export declare function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: number, height: number): void;
 export declare function getSvgStrokeColors(svg: SVGSVGElement): Set<string>;
+export {};
 //# sourceMappingURL=index.d.ts.map

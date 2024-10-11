@@ -5,9 +5,12 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 ## ToDo
 
 -   Support for SVG path features: Q, T, A
--   Scale, offset
 
 ## Versions
+
+### 0.3.0
+
+-   Added scale and offset
 
 ### 0.2.0
 

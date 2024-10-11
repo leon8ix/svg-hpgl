@@ -18,19 +18,26 @@ export type PenSelectors = {
 	stroke?: string;
 }[];
 
+type SVGtoHPGLOptions = {
+	segmentsPerUnit?: number;
+	scale?: number;
+	offsetX?: number;
+	offsetY?: number;
+};
+
 export function svgToHPGL(
 	svg: SVGSVGElement,
-	segmentsPerUnit = 0.08,
-	penSelectors: PenSelectors = [{ pen: 1 }]
+	pens: PenSelectors = [{ pen: 1 }],
+	{ segmentsPerUnit = 1, scale = 1, offsetX = 0, offsetY = 0 }: SVGtoHPGLOptions
 ): HPGLProgram {
 	const hpgl: HPGLProgram = [['PA']];
 
-	penSelectors.forEach(({ pen, selector, stroke }) => {
+	pens.forEach(({ pen, selector, stroke }) => {
 		hpgl.push([`SP${pen}`], ['PU']);
 
 		svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
 			if (!(el instanceof SVGGraphicsElement)) return;
-			const tf = getTransformer(el);
+			const tf = getTransformer(el, scale, offsetX, offsetY);
 
 			if (el instanceof SVGLineElement) {
 				// <line>
@@ -144,7 +151,12 @@ export function svgToHPGL(
 	return hpgl;
 }
 
-function getTransformer(element: SVGGraphicsElement): (x: number, y: number) => [number, number] {
+function getTransformer(
+	element: SVGGraphicsElement,
+	scale = 1,
+	offsetX = 0,
+	offsetY = 0
+): (x: number, y: number) => [number, number] {
 	const svg = element.ownerSVGElement;
 	if (!svg) {
 		console.warn('Could not retrieve ownerSVGElement');
@@ -165,7 +177,7 @@ function getTransformer(element: SVGGraphicsElement): (x: number, y: number) => 
 	return (x: number, y: number) => {
 		(point.x = x), (point.y = y);
 		const pointT = point.matrixTransform(ctm);
-		return [Math.round(pointT.x), Math.round(pointT.y)];
+		return [Math.round(pointT.x * scale + offsetX), Math.round(pointT.y * scale + offsetY)];
 	};
 }
 
