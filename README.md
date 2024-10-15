@@ -8,6 +8,11 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 ## Versions
 
+### 0.4.0
+
+-   Added rotation
+-   Improved test html page with inputs
+
 ### 0.3.0
 
 -   Added scale and offset

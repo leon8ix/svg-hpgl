@@ -19,25 +19,32 @@ export type PenSelectors = {
 }[];
 
 type SVGtoHPGLOptions = {
+	/** Number of line segments per og unit any curves will be split into */
 	segmentsPerUnit?: number;
-	scale?: number;
+	/** 1. Rotation (degrees, clockwise, around center of svg) */
+	rotation?: number;
+	/** 2. Offset (og unit, before rotation) */
 	offsetX?: number;
+	/** 2. Offset (og unit, before rotation) */
 	offsetY?: number;
+	/** 3. Scale (factor used in hpgl values) */
+	scale?: number;
 };
 
 export function svgToHPGL(
 	svg: SVGSVGElement,
 	pens: PenSelectors = [{ pen: 1 }],
-	{ segmentsPerUnit = 1, scale = 1, offsetX = 0, offsetY = 0 }: SVGtoHPGLOptions
+	options: SVGtoHPGLOptions = {}
 ): HPGLProgram {
 	const hpgl: HPGLProgram = [['PA']];
+	const { segmentsPerUnit = 1 } = options;
 
 	pens.forEach(({ pen, selector, stroke }) => {
 		hpgl.push([`SP${pen}`], ['PU']);
 
 		svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
 			if (!(el instanceof SVGGraphicsElement)) return;
-			const tf = getTransformer(el, scale, offsetX, offsetY);
+			const tf = getTransformer(el, options);
 
 			if (el instanceof SVGLineElement) {
 				// <line>
@@ -133,8 +140,11 @@ export function svgToHPGL(
 						hpgl.push(...PUD(tf, points));
 						updateCurr(ins);
 					} else if (cmd === 'Q') {
+						// TODO
 					} else if (cmd === 'T') {
+						// TODO
 					} else if (cmd === 'A') {
+						// TODO
 					} else if (cmd === 'Z') {
 						const firstIns = instructions[0];
 						const firstX = firstIns?.cmd === 'M' ? firstIns.x : 0;
@@ -153,9 +163,7 @@ export function svgToHPGL(
 
 function getTransformer(
 	element: SVGGraphicsElement,
-	scale = 1,
-	offsetX = 0,
-	offsetY = 0
+	{ offsetX = 0, offsetY = 0, rotation = 0, scale = 1 }: SVGtoHPGLOptions
 ): (x: number, y: number) => [number, number] {
 	const svg = element.ownerSVGElement;
 	if (!svg) {
@@ -166,18 +174,23 @@ function getTransformer(
 	let ctm = svg.createSVGMatrix();
 	let currEl: SVGElement | null = element;
 
+	// Merge all transforms of all parent elements
 	while (currEl) {
 		const currCtm = currEl instanceof SVGGraphicsElement && currEl.transform.baseVal.consolidate()?.matrix;
 		if (currCtm) ctm = currCtm.multiply(ctm);
 		currEl = currEl.parentNode instanceof SVGElement ? currEl.parentNode : null;
 	}
 
+	// Merge manually specified transforms
+	const userCTM = svg.createSVGMatrix().scale(scale, scale).translate(offsetX, offsetY).rotate(rotation);
+	ctm = userCTM.multiply(ctm);
+
 	const point = svg.createSVGPoint();
 
 	return (x: number, y: number) => {
 		(point.x = x), (point.y = y);
 		const pointT = point.matrixTransform(ctm);
-		return [Math.round(pointT.x * scale + offsetX), Math.round(pointT.y * scale + offsetY)];
+		return [Math.round(pointT.x), Math.round(pointT.y)];
 	};
 }
 
@@ -246,6 +259,7 @@ export function hpglFindBBox(hpgl: HPGLProgram) {
 }
 
 export function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: number, height: number): void {
+	console.log(width, height);
 	canvas.width = width;
 	canvas.height = height;
 	const ctx = canvas.getContext('2d');
