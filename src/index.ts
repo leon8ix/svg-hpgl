@@ -18,7 +18,7 @@ export type PenSelectors = {
 	stroke?: string;
 }[];
 
-type SVGtoHPGLOptions = {
+export type SVGtoHPGLOptions = {
 	/** Number of line segments per og unit any curves will be split into */
 	segmentsPerUnit?: number;
 	/** 1. Rotation (degrees, clockwise, around center of svg) */
@@ -265,9 +265,11 @@ export function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: nu
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error('Context of canvas unavailable');
 
-	// ctx.lineWidth = 1;
-	// ctx.strokeStyle = '#000000';
-	ctx.clearRect(0, 0, width, height);
+	ctx.fillStyle = '#ffffff';
+	ctx.fillRect(0, 0, width, height);
+
+	ctx.lineWidth = Math.round(Math.max(width, height) / 1000);
+	ctx.strokeStyle = '#000000';
 	ctx.beginPath();
 
 	hpgl.forEach(([cmd, x, y, ...vals]) => {
