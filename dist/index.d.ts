@@ -11,12 +11,18 @@ export type PenSelectors = {
     stroke?: string;
 }[];
 type SVGtoHPGLOptions = {
+    /** Number of line segments per og unit any curves will be split into */
     segmentsPerUnit?: number;
-    scale?: number;
+    /** 1. Rotation (degrees, clockwise, around center of svg) */
+    rotation?: number;
+    /** 2. Offset (og unit, before rotation) */
     offsetX?: number;
+    /** 2. Offset (og unit, before rotation) */
     offsetY?: number;
+    /** 3. Scale (factor used in hpgl values) */
+    scale?: number;
 };
-export declare function svgToHPGL(svg: SVGSVGElement, pens: PenSelectors | undefined, { segmentsPerUnit, scale, offsetX, offsetY }: SVGtoHPGLOptions): HPGLProgram;
+export declare function svgToHPGL(svg: SVGSVGElement, pens?: PenSelectors, options?: SVGtoHPGLOptions): HPGLProgram;
 /** Implements and expects absolute coords (PA)  */
 export declare function hpglFindBBox(hpgl: HPGLProgram): {
     xMin: number;

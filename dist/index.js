@@ -13,14 +13,15 @@ const adaptive_bezier_curve_1 = __importDefault(require("adaptive-bezier-curve")
 function buildHPGL(program, prefix = '', suffix = '') {
     return prefix + program.map(([cmd, ...vals]) => cmd + vals.join(',') + ';').join('') + suffix;
 }
-function svgToHPGL(svg, pens = [{ pen: 1 }], { segmentsPerUnit = 1, scale = 1, offsetX = 0, offsetY = 0 }) {
+function svgToHPGL(svg, pens = [{ pen: 1 }], options = {}) {
     const hpgl = [['PA']];
+    const { segmentsPerUnit = 1 } = options;
     pens.forEach(({ pen, selector, stroke }) => {
         hpgl.push([`SP${pen}`], ['PU']);
         svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
             if (!(el instanceof SVGGraphicsElement))
                 return;
-            const tf = getTransformer(el, scale, offsetX, offsetY);
+            const tf = getTransformer(el, options);
             if (el instanceof SVGLineElement) {
                 // <line>
                 hpgl.push(PU(tf, svgVal(el.x1), svgVal(el.y1)));
@@ -124,10 +125,13 @@ function svgToHPGL(svg, pens = [{ pen: 1 }], { segmentsPerUnit = 1, scale = 1, o
                         updateCurr(ins);
                     }
                     else if (cmd === 'Q') {
+                        // TODO
                     }
                     else if (cmd === 'T') {
+                        // TODO
                     }
                     else if (cmd === 'A') {
+                        // TODO
                     }
                     else if (cmd === 'Z') {
                         const firstIns = instructions[0];
@@ -143,7 +147,7 @@ function svgToHPGL(svg, pens = [{ pen: 1 }], { segmentsPerUnit = 1, scale = 1, o
     });
     return hpgl;
 }
-function getTransformer(element, scale = 1, offsetX = 0, offsetY = 0) {
+function getTransformer(element, { offsetX = 0, offsetY = 0, rotation = 0, scale = 1 }) {
     const svg = element.ownerSVGElement;
     if (!svg) {
         console.warn('Could not retrieve ownerSVGElement');
@@ -151,17 +155,21 @@ function getTransformer(element, scale = 1, offsetX = 0, offsetY = 0) {
     }
     let ctm = svg.createSVGMatrix();
     let currEl = element;
+    // Merge all transforms of all parent elements
     while (currEl) {
         const currCtm = currEl instanceof SVGGraphicsElement && currEl.transform.baseVal.consolidate()?.matrix;
         if (currCtm)
             ctm = currCtm.multiply(ctm);
         currEl = currEl.parentNode instanceof SVGElement ? currEl.parentNode : null;
     }
+    // Merge manually specified transforms
+    const userCTM = svg.createSVGMatrix().scale(scale, scale).translate(offsetX, offsetY).rotate(rotation);
+    ctm = userCTM.multiply(ctm);
     const point = svg.createSVGPoint();
     return (x, y) => {
         (point.x = x), (point.y = y);
         const pointT = point.matrixTransform(ctm);
-        return [Math.round(pointT.x * scale + offsetX), Math.round(pointT.y * scale + offsetY)];
+        return [Math.round(pointT.x), Math.round(pointT.y)];
     };
 }
 function svgVal(prop) {
@@ -218,6 +226,7 @@ function hpglFindBBox(hpgl) {
     return { xMin, xMax, yMin, yMax, width: xMax - xMin, height: yMax - yMin };
 }
 function drawHPGL(canvas, hpgl, width, height) {
+    console.log(width, height);
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
