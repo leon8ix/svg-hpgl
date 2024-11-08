@@ -10,7 +10,7 @@ export type PenSelectors = {
     /** should use values retrieved by getSvgStrokeColors */
     stroke?: string;
 }[];
-type SVGtoHPGLOptions = {
+export type SVGtoHPGLOptions = {
     /** Number of line segments per og unit any curves will be split into */
     segmentsPerUnit?: number;
     /** 1. Rotation (degrees, clockwise, around center of svg) */
@@ -33,6 +33,5 @@ export declare function hpglFindBBox(hpgl: HPGLProgram): {
     height: number;
 };
 export declare function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: number, height: number): void;
-export declare function getSvgStrokeColors(svg: SVGSVGElement): Set<string>;
-export {};
+export declare function getSVGStrokeColors(svg: SVGSVGElement): Set<string>;
 //# sourceMappingURL=index.d.ts.map

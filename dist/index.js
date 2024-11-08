@@ -7,7 +7,7 @@ exports.buildHPGL = buildHPGL;
 exports.svgToHPGL = svgToHPGL;
 exports.hpglFindBBox = hpglFindBBox;
 exports.drawHPGL = drawHPGL;
-exports.getSvgStrokeColors = getSvgStrokeColors;
+exports.getSVGStrokeColors = getSVGStrokeColors;
 const svg_path_1 = require("./svg-path");
 const adaptive_bezier_curve_1 = __importDefault(require("adaptive-bezier-curve"));
 function buildHPGL(program, prefix = '', suffix = '') {
@@ -94,7 +94,7 @@ function svgToHPGL(svg, pens = [{ pen: 1 }], options = {}) {
                         currY = ins.y;
                 }
                 const instructions = (0, svg_path_1.parsePath)(d);
-                console.log('Path', instructions);
+                // console.log('Path', instructions);
                 instructions.forEach((ins, insI) => {
                     const { cmd } = ins;
                     if (cmd === 'M') {
@@ -148,29 +148,106 @@ function svgToHPGL(svg, pens = [{ pen: 1 }], options = {}) {
     return hpgl;
 }
 function getTransformer(element, { offsetX = 0, offsetY = 0, rotation = 0, scale = 1 }) {
-    const svg = element.ownerSVGElement;
-    if (!svg) {
+    const rootSVG = getRootSVG(element);
+    if (!rootSVG) {
         console.warn('Could not retrieve ownerSVGElement');
         return (x, y) => [Math.round(x), Math.round(y)];
     }
-    let ctm = svg.createSVGMatrix();
-    let currEl = element;
-    // Merge all transforms of all parent elements
-    while (currEl) {
-        const currCtm = currEl instanceof SVGGraphicsElement && currEl.transform.baseVal.consolidate()?.matrix;
-        if (currCtm)
-            ctm = currCtm.multiply(ctm);
-        currEl = currEl.parentNode instanceof SVGElement ? currEl.parentNode : null;
+    const familyTree = getSVGFamilyTree(element);
+    // console.log('getTransformer', familyTree);
+    let ctm = rootSVG.createSVGMatrix();
+    let elCTM;
+    for (const el of familyTree) {
+        if (el instanceof SVGSVGElement) {
+            // console.log('SVGSVGElement');
+            elCTM = getSVGSVGElementTransform(el);
+        }
+        else if (el instanceof SVGGraphicsElement) {
+            // console.log('SVGGraphicsElement');
+            elCTM = el.transform.baseVal.consolidate()?.matrix;
+        }
+        else {
+            elCTM = undefined;
+        }
+        // console.log({ elCTM, el });
+        if (elCTM)
+            ctm = elCTM.multiply(ctm);
     }
-    // Merge manually specified transforms
-    const userCTM = svg.createSVGMatrix().scale(scale, scale).translate(offsetX, offsetY).rotate(rotation);
+    // Merge in manually specified transformations
+    const userCTM = rootSVG.createSVGMatrix().translate(offsetX, offsetY).rotate(rotation).scale(scale);
     ctm = userCTM.multiply(ctm);
-    const point = svg.createSVGPoint();
+    const point = rootSVG.createSVGPoint();
+    // Return a transformed coordinate function
     return (x, y) => {
-        (point.x = x), (point.y = y);
-        const pointT = point.matrixTransform(ctm);
-        return [Math.round(pointT.x), Math.round(pointT.y)];
+        point.x = x;
+        point.y = y;
+        const transformedPoint = point.matrixTransform(ctm);
+        return [Math.round(transformedPoint.x), Math.round(transformedPoint.y)];
     };
+}
+function getSVGSVGElementTransform(currSVG) {
+    const rootSVG = currSVG.ownerSVGElement || currSVG;
+    const pos = {
+        x: svgVal(currSVG.x),
+        y: svgVal(currSVG.y),
+        w: svgVal(currSVG.width) || rootSVG.viewBox.baseVal.width,
+        h: svgVal(currSVG.height) || rootSVG.viewBox.baseVal.height,
+    };
+    const view = {
+        x: currSVG.viewBox.baseVal.x || 0,
+        y: currSVG.viewBox.baseVal.y || 0,
+        w: currSVG.viewBox.baseVal.width || pos.w,
+        h: currSVG.viewBox.baseVal.height || pos.h,
+    };
+    // Handle preserveAspectRatio alignment
+    const preserveAspectRatio = currSVG.preserveAspectRatio.baseVal;
+    const align = preserveAspectRatio.align;
+    const meetOrSlice = preserveAspectRatio.meetOrSlice;
+    // align === SVGPreserveAspectRatio.SVG_PRESERVEASPECTRATIO_NONE
+    let scaleX = pos.w / view.w;
+    let scaleY = pos.h / view.h;
+    let translateX = pos.x - view.x;
+    let translateY = pos.y - view.y;
+    // console.log('align', SVGPreserveAspectRatio.SVG_PRESERVEASPECTRATIO_NONE === align, align, scaleX, scaleY);
+    if (align !== SVGPreserveAspectRatio.SVG_PRESERVEASPECTRATIO_NONE) {
+        if (meetOrSlice === SVGPreserveAspectRatio.SVG_MEETORSLICE_SLICE) {
+            scaleX = scaleY = Math.max(scaleX, scaleY); // slice / fill
+        }
+        else {
+            scaleX = scaleY = Math.min(scaleX, scaleY); // meet / contain / default
+        }
+        // Apply alignment adjustments
+        const alignX = align % 3; // xMin(1), xMid(2), xMax(3)
+        const alignY = Math.floor(align / 3); // yMin(1), yMid(2), yMax(3)
+        if (alignX === 2)
+            translateX += (pos.w - view.w * scaleX) / 2; // xMid
+        if (alignX === 3)
+            translateX += pos.w - view.w * scaleX; // xMax
+        if (alignY === 2)
+            translateY += (pos.h - view.h * scaleY) / 2; // yMid
+        if (alignY === 3)
+            translateY += pos.h - view.h * scaleY; // yMax
+    }
+    // console.log('Handling SVG scaling', { currSVG, translateX, translateY, scaleX, scaleY });
+    // Account for <svg> x, y offset, and scale to viewBox with adjusted origin
+    return rootSVG.createSVGMatrix().translate(translateX, translateY).scale(scaleX, scaleY);
+}
+/** Finds the root SVGSVGElement, even for nested SVGs */
+function getRootSVG(element) {
+    let svg = element.ownerSVGElement;
+    while (svg?.ownerSVGElement)
+        svg = svg.ownerSVGElement;
+    return svg;
+}
+/** Retrieves the whole ancestry of SVGs as well as nested SVGs going from child to root SVG */
+function getSVGFamilyTree(element) {
+    const tree = [];
+    let currEl = element;
+    while (currEl instanceof SVGElement) {
+        tree.push(currEl);
+        currEl = currEl.parentNode;
+    }
+    return tree;
 }
 function svgVal(prop) {
     return prop.baseVal.value || 0;
@@ -226,15 +303,16 @@ function hpglFindBBox(hpgl) {
     return { xMin, xMax, yMin, yMax, width: xMax - xMin, height: yMax - yMin };
 }
 function drawHPGL(canvas, hpgl, width, height) {
-    console.log(width, height);
+    // console.log(width, height);
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx)
         throw new Error('Context of canvas unavailable');
-    // ctx.lineWidth = 1;
-    // ctx.strokeStyle = '#000000';
-    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.lineWidth = Math.round(Math.max(width, height) / 1000);
+    ctx.strokeStyle = '#000000';
     ctx.beginPath();
     hpgl.forEach(([cmd, x, y, ...vals]) => {
         // console.log({ cmd, x, y, vals });
@@ -249,7 +327,7 @@ function drawHPGL(canvas, hpgl, width, height) {
     });
     ctx.stroke();
 }
-function getSvgStrokeColors(svg) {
+function getSVGStrokeColors(svg) {
     const colors = new Set();
     svg.querySelectorAll('[stroke]').forEach(el => {
         const stroke = el.getAttribute('stroke');
