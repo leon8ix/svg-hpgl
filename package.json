@@ -1,6 +1,6 @@
 {
 	"name": "svg-hpgl",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"description": "A node package for converting SVG to HP-GL. Breaks up any curves into small segments.",
 	"main": "dist/index.js",
 	"module": "dist/index.js",

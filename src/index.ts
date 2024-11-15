@@ -9,13 +9,15 @@ export function buildHPGL(program: HPGLProgram, prefix = '', suffix = ''): strin
 	return prefix + program.map(([cmd, ...vals]) => cmd + vals.join(',') + ';').join('') + suffix;
 }
 
-/** defaults to any stroked element, uses selector in this prio: selector > stroke > [stroke] */
+/** defaults to any stroked element, uses selector in this prio: selector > stroke > `[stroke]` */
 export type PenSelectors = {
 	pen: number;
 	/** [stroke], [stroke=magenta] or any other querySelector */
 	selector?: string;
 	/** should use values retrieved by getSvgStrokeColors */
-	stroke?: string;
+	stroke?: string | string[];
+	/** Gets inserted after `SP1` (select pen x) and before any commands with that tool */
+	cmd?: string;
 }[];
 
 export type SVGtoHPGLOptions = {
@@ -39,10 +41,18 @@ export function svgToHPGL(
 	const hpgl: HPGLProgram = [['PA']];
 	const { segmentsPerUnit = 1 } = options;
 
-	pens.forEach(({ pen, selector, stroke }) => {
-		hpgl.push([`SP${pen}`], ['PU']);
+	pens.forEach(({ pen, selector, stroke, cmd: penCmd }) => {
+		let sel = selector;
+		if (Array.isArray(stroke)) sel ??= stroke.map(s => `[stroke="${s}"]`).join(',');
+		if (stroke) sel ??= `[stroke="${stroke}"]`;
+		sel ??= '[stroke]';
+		const elements = svg.querySelectorAll(sel);
+		if (!elements.length) return;
 
-		svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
+		hpgl.push([`SP${pen}`], ['PU']);
+		if (penCmd) hpgl.push([penCmd as HPGLCommand]);
+
+		elements.forEach(el => {
 			if (!(el instanceof SVGGraphicsElement)) return;
 			const tf = getTransformer(el, options);
 

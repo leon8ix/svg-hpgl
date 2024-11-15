@@ -2,13 +2,15 @@ export type HPGLCommand = 'PU' | 'PD' | 'PA' | `SP${number}`;
 export type HPGLInstruction = [HPGLCommand, ...number[]];
 export type HPGLProgram = HPGLInstruction[];
 export declare function buildHPGL(program: HPGLProgram, prefix?: string, suffix?: string): string;
-/** defaults to any stroked element, uses selector in this prio: selector > stroke > [stroke] */
+/** defaults to any stroked element, uses selector in this prio: selector > stroke > `[stroke]` */
 export type PenSelectors = {
     pen: number;
     /** [stroke], [stroke=magenta] or any other querySelector */
     selector?: string;
     /** should use values retrieved by getSvgStrokeColors */
-    stroke?: string;
+    stroke?: string | string[];
+    /** Gets inserted after `SP1` (select pen x) and before any commands with that tool */
+    cmd?: string;
 }[];
 export type SVGtoHPGLOptions = {
     /** Number of line segments per og unit any curves will be split into */

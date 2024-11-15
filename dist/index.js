@@ -16,9 +16,20 @@ function buildHPGL(program, prefix = '', suffix = '') {
 function svgToHPGL(svg, pens = [{ pen: 1 }], options = {}) {
     const hpgl = [['PA']];
     const { segmentsPerUnit = 1 } = options;
-    pens.forEach(({ pen, selector, stroke }) => {
+    pens.forEach(({ pen, selector, stroke, cmd: penCmd }) => {
+        let sel = selector;
+        if (Array.isArray(stroke))
+            sel ??= stroke.map(s => `[stroke="${s}"]`).join(',');
+        if (stroke)
+            sel ??= `[stroke="${stroke}"]`;
+        sel ??= '[stroke]';
+        const elements = svg.querySelectorAll(sel);
+        if (!elements.length)
+            return;
         hpgl.push([`SP${pen}`], ['PU']);
-        svg.querySelectorAll(selector ?? (stroke ? `[stroke="${stroke}"]` : '[stroke]')).forEach(el => {
+        if (penCmd)
+            hpgl.push([penCmd]);
+        elements.forEach(el => {
             if (!(el instanceof SVGGraphicsElement))
                 return;
             const tf = getTransformer(el, options);
