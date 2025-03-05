@@ -1,7 +1,9 @@
 {
-	"name": "svg-hpgl",
-	"version": "0.6.0",
+	"name": "@leon8ix/svg-hpgl",
+	"version": "0.7.0",
+	"author": "8ix",
 	"description": "A node package for converting SVG to HP-GL. Breaks up any curves into small segments.",
+	"license": "UNLICENSED",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -9,9 +11,13 @@
 		"build": "tsc",
 		"dev": "vite"
 	},
-	"author": "8ix",
-	"license": "(private)",
-	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/leon8ix/svg-hpgl.git"
+	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	},
 	"devDependencies": {
 		"@types/jsdom": "^21.1.7",
 		"typescript": "^5.6.3",

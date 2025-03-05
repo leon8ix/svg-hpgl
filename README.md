@@ -8,6 +8,10 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 ## Versions
 
+### 0.7.0
+
+-   Added GitHub Action for deploying to GitHub Packages, so it can be consumed properly
+
 ### 0.6.0
 
 -   Stroke for pen selector now accepts array of stroke colors

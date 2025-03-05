@@ -1,1 +1,0 @@
-{"version":3,"file":"ts-utils.js","sourceRoot":"","sources":["../src/ts-utils.ts"],"names":[],"mappings":"","sourcesContent":["export type FixedArray<T, L extends number, R extends unknown[] = []> = R['length'] extends L\r\n\t? R\r\n\t: FixedArray<T, L, [T, ...R]>;\r\n\r\nexport type KeysOfUnion<T> = T extends T ? keyof T : never;\r\n"]}
