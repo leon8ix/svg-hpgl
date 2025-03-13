@@ -23,7 +23,7 @@ export type PenSelectors = {
 export type SVGtoHPGLOptions = {
 	/** Number of line segments per og unit any curves will be split into */
 	segmentsPerUnit?: number;
-	/** 1. Rotation (degrees, clockwise, around center of svg) */
+	/** 1. Rotation (degrees, clockwise, around 0|0 of svg) */
 	rotation?: number;
 	/** 2. Offset (og unit, before rotation) */
 	offsetX?: number;
@@ -31,6 +31,10 @@ export type SVGtoHPGLOptions = {
 	offsetY?: number;
 	/** 3. Scale (factor used in hpgl values) */
 	scale?: number;
+	/** 4. Mirror around 0 */
+	mirrorX?: boolean;
+	/** 4. Mirror around 0 */
+	mirrorY?: boolean;
 };
 
 export function svgToHPGL(
@@ -173,7 +177,7 @@ export function svgToHPGL(
 
 function getTransformer(
 	element: SVGGraphicsElement,
-	{ offsetX = 0, offsetY = 0, rotation = 0, scale = 1 }: SVGtoHPGLOptions
+	{ offsetX = 0, offsetY = 0, rotation = 0, scale = 1, mirrorX = false, mirrorY = false }: SVGtoHPGLOptions
 ): (x: number, y: number) => [number, number] {
 	const rootSVG = getRootSVG(element);
 
@@ -202,7 +206,10 @@ function getTransformer(
 	}
 
 	// Merge in manually specified transformations
-	const userCTM = rootSVG.createSVGMatrix().translate(offsetX, offsetY).rotate(rotation).scale(scale);
+	let userCTM = rootSVG.createSVGMatrix().translate(offsetX, offsetY);
+	if (mirrorX) userCTM = userCTM.flipX();
+	if (mirrorY) userCTM = userCTM.flipY();
+	userCTM = userCTM.rotate(rotation).scale(scale);
 	ctm = userCTM.multiply(ctm);
 
 	const point = rootSVG.createSVGPoint();
