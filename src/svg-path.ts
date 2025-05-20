@@ -63,7 +63,7 @@ export function parsePathSyntax(d: string): PathInstructionRaw[] {
 	function finishToken() {
 		if (!token.length) return;
 		const num = parseFloat(token);
-		if (typeof num === 'number' && !isNaN(num)) vals.push(num);
+		if (!isNaN(num)) vals.push(num);
 		token = '';
 		isFloat = false;
 	}
@@ -75,6 +75,7 @@ export function parsePathSyntax(d: string): PathInstructionRaw[] {
 			if (!vals.length) return;
 			const cmdCount = Math.floor(vals.length / cmdLength);
 			for (let i = 0; i < cmdCount; i++) {
+				if (cmd === 'M' && i === 1) cmd = 'L'; // Implicit L after M pos
 				const firstValI = i * cmdLength;
 				const lastValI = firstValI + cmdLength;
 				pathSeq.push({ cmd, rel, vals: vals.slice(firstValI, lastValI) });
@@ -84,8 +85,6 @@ export function parsePathSyntax(d: string): PathInstructionRaw[] {
 		}
 		vals.length = 0;
 	}
-
-	// TODO: after M with two vals, ther is an implicit L :/
 
 	for (const c of d) {
 		if (isLetter(c)) {
