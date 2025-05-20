@@ -6,6 +6,8 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 -   Support for SVG path features: Q, T, A
 -   Add preview HPGL as SVG path function (need not be rastered canvas)
+-   Support SVGs using CSS for style assingments
+    -   Instead of requiring presentation attribute syntax
 
 ## Versions
 
