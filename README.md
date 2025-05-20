@@ -6,10 +6,20 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 -   Support for SVG path features: Q, T, A
 -   Add preview HPGL as SVG path function (need not be rastered canvas)
--   Support SVGs using CSS for style assingments
-    -   Instead of requiring presentation attribute syntax
 
 ## Versions
+
+### 0.11.0 (250520)
+
+-   Added support for CSS styles for strokes in SVG
+    -   Presentation attribute syntax is no longer required
+-   BREAKING CHANGES
+    -   Removed PenSelectors['selector']
+    -   PenSelectors['stroke'] is now required
+    -   Selecting all stroked elements is now done by passing `true` for PenSelectors['stroke'] instead of omitting it
+    -   Colors are now in the unified syntax of: `rgb(0, 0, 0)`
+        -   Any other syntax will not select anything
+        -   getSVGStrokeColors() will return only this syntax
 
 ### 0.10.0 (250520)
 

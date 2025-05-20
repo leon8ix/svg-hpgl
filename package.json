@@ -1,6 +1,6 @@
 {
 	"name": "@leon8ix/svg-hpgl",
-	"version": "0.10.0",
+	"version": "0.11.0",
 	"author": "8ix",
 	"description": "A node package for converting SVG to HP-GL. Breaks up any curves into small segments.",
 	"license": "UNLICENSED",

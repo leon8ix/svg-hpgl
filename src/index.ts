@@ -9,13 +9,10 @@ export function buildHPGL(program: HPGLProgram, prefix = '', suffix = ''): strin
 	return prefix + program.map(([cmd, ...vals]) => cmd + vals.join(',') + ';').join('') + suffix;
 }
 
-/** defaults to any stroked element, uses selector in this prio: selector > stroke > `[stroke]` */
 export type PenSelectors = {
 	pen: number;
-	/** [stroke], [stroke=magenta] or any other querySelector */
-	selector?: string;
-	/** should use values retrieved by getSvgStrokeColors */
-	stroke?: string | string[];
+	/** Should use values retrieved by getSvgStrokeColors(), `true` selects all stroked elements */
+	stroke: true | string | string[];
 	/** Gets inserted after `SP1` (select pen x) and before any commands with that tool */
 	cmd?: string;
 }[];
@@ -39,18 +36,16 @@ export type SVGtoHPGLOptions = {
 
 export function svgToHPGL(
 	svg: SVGSVGElement,
-	pens: PenSelectors = [{ pen: 1 }],
+	pens: PenSelectors = [{ pen: 1, stroke: true }],
 	options: SVGtoHPGLOptions = {}
 ): HPGLProgram {
 	const hpgl: HPGLProgram = [['PA']];
 	const { segmentsPerUnit = 1 } = options;
 
-	pens.forEach(({ pen, selector, stroke, cmd: penCmd }) => {
-		let sel = selector;
-		if (Array.isArray(stroke)) sel ??= stroke.map(s => `[stroke="${s}"]`).join(',');
-		if (stroke) sel ??= `[stroke="${stroke}"]`;
-		sel ??= '[stroke]';
-		const elements = svg.querySelectorAll(sel);
+	const strokeEls = getSVGStrokedElements(svg);
+
+	pens.forEach(({ pen, stroke, cmd: penCmd }) => {
+		const elements = grabElementsByStroke(strokeEls, stroke);
 		if (!elements.length) return;
 
 		hpgl.push([`SP${pen}`], ['PU']);
@@ -68,7 +63,7 @@ export function svgToHPGL(
 			} else if (el instanceof SVGPolylineElement || el instanceof SVGPolygonElement) {
 				// <polyline> / <polygon>
 				// Same element, except for polygon being closed
-				const points = Array.from(el.points).map(({ x, y }) => [x, y] as [number, number]);
+				const points: [number, number][] = Array.from(el.points).map(({ x, y }) => [x, y]);
 				hpgl.push(...PUD(tf, points));
 				if (el instanceof SVGPolygonElement && points[0]) hpgl.push(PD(tf, ...points[0]));
 				return;
@@ -382,12 +377,33 @@ export function drawHPGL(canvas: HTMLCanvasElement, hpgl: HPGLProgram, width: nu
 	ctx.stroke();
 }
 
-export function getSVGStrokeColors(svg: SVGSVGElement): Set<string> {
-	const colors = new Set<string>();
+/** Returns unified color syntax, like `rgb(255, 0, 0)` */
+export function getSVGStrokeColors(svg: SVGSVGElement): string[] {
+	return Object.keys(getSVGStrokedElements(svg));
+}
 
-	svg.querySelectorAll('[stroke]').forEach(el => {
-		const stroke = el.getAttribute('stroke');
-		if (stroke) colors.add(stroke);
+/** Returns unified color syntax, like `rgb(255, 0, 0)` */
+export function getSVGStrokedElements(svg: SVGSVGElement): Record<string, SVGGraphicsElement[]> {
+	const svgEls = svg.querySelectorAll<SVGGraphicsElement>('line, polyline, polygon, circle, ellipse, rect, path');
+	const strokeEls: Record<string, SVGGraphicsElement[]> = {};
+	svgEls.forEach(el => {
+		const stroke = getComputedStyle(el).getPropertyValue('stroke');
+		if (!stroke || stroke === 'none') return;
+		strokeEls[stroke] ??= [];
+		strokeEls[stroke].push(el);
 	});
-	return colors;
+	return strokeEls;
+}
+
+function grabElementsByStroke(
+	strokeEls: ReturnType<typeof getSVGStrokedElements>,
+	stroke: PenSelectors[number]['stroke']
+): SVGGraphicsElement[] {
+	if (typeof stroke === 'string') {
+		return strokeEls[stroke] || [];
+	} else if (Array.isArray(stroke)) {
+		return stroke.map(s => strokeEls[s] || []).flat();
+	} else {
+		return Object.values(strokeEls).flat();
+	}
 }
