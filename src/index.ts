@@ -65,11 +65,12 @@ export function svgToHPGL(
 				hpgl.push(PU(tf, svgVal(el.x1), svgVal(el.y1)));
 				hpgl.push(PD(tf, svgVal(el.x2), svgVal(el.y2)));
 				return;
-			} else if (el instanceof SVGPolylineElement) {
-				// <polyline>
-				const points = el.points;
-				if (points[0]) hpgl.push(PU(tf, points[0]?.x, points[0]?.y));
-				for (const pt of points) hpgl.push(PD(tf, pt.x, pt.y));
+			} else if (el instanceof SVGPolylineElement || el instanceof SVGPolygonElement) {
+				// <polyline> / <polygon>
+				// Same element, except for polygon being closed
+				const points = Array.from(el.points).map(({ x, y }) => [x, y] as [number, number]);
+				hpgl.push(...PUD(tf, points));
+				if (el instanceof SVGPolygonElement && points[0]) hpgl.push(PD(tf, ...points[0]));
 				return;
 			} else if (el instanceof SVGCircleElement) {
 				// <circle>
