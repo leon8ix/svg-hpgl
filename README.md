@@ -8,6 +8,10 @@ A node package for converting SVG to HP-GL. Used for reading out movement instru
 
 ## Versions
 
+### 1.0.1 (250521)
+
+-   Added MIT License
+
 ### 1.0.0 (250521)
 
 -   Bumped major version to 1, as the package is now fully working and supports all intended SVG and path features
