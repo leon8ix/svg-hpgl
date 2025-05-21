@@ -4,10 +4,13 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 ## ToDo
 
--   Support for SVG path features: A
 -   Add preview HPGL as SVG path function (need not be rastered canvas)
 
 ## Versions
+
+### 0.13.0 (250521)
+
+-   Added support for SVG path command: A
 
 ### 0.12.0 (250521)
 

@@ -169,7 +169,68 @@ export function svgToHPGL(
 						const points = getQuadraticBezierPoints([currX, currY], quadC1, [ins.x, ins.y], bezRes);
 						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'A') {
-						// TODO
+						// endpoint-of-arc (absolute coords)
+						const [x1, y1] = [currX, currY];
+						const { x: x2, y: y2, fa, fs } = ins;
+						const phi = (ins.rot * Math.PI) / 180; // → radians
+
+						// 1) Compute (x1′,y1′)
+						const dx2 = (x1 - x2) / 2;
+						const dy2 = (y1 - y2) / 2;
+						const x1p = Math.cos(phi) * dx2 + Math.sin(phi) * dy2;
+						const y1p = -Math.sin(phi) * dx2 + Math.cos(phi) * dy2;
+
+						// 2) Ensure radii are large enough
+						const λ = (x1p * x1p) / (ins.rx * ins.rx) + (y1p * y1p) / (ins.ry * ins.ry);
+						const scaleRad = λ <= 1 ? 1 : Math.sqrt(λ);
+						const rx = ins.rx * scaleRad;
+						const ry = ins.ry * scaleRad;
+
+						// 3) Compute center′ (cx′,cy′)
+						const sign = fa === fs ? -1 : 1;
+						const num = rx * rx * (ry * ry) - rx * rx * (y1p * y1p) - ry * ry * (x1p * x1p);
+						const den = rx * rx * (y1p * y1p) + ry * ry * (x1p * x1p);
+						const coef = sign * Math.sqrt(Math.max(0, num / den));
+						const cxp = coef * ((rx * y1p) / ry);
+						const cyp = coef * ((-ry * x1p) / rx);
+
+						// 4) Center in original coords
+						const cx = Math.cos(phi) * cxp - Math.sin(phi) * cyp + (x1 + x2) / 2;
+						const cy = Math.sin(phi) * cxp + Math.cos(phi) * cyp + (y1 + y2) / 2;
+
+						// 5) Angles
+						function vectorAngle(ux: number, uy: number, vx: number, vy: number) {
+							const dot = ux * vx + uy * vy;
+							const len = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+							let ang = Math.acos(Math.min(1, Math.max(-1, dot / len)));
+							if (ux * vy - uy * vx < 0) ang = -ang;
+							return ang;
+						}
+						const θ1 = vectorAngle(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+						let Δθ = vectorAngle((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+						if (!fs && Δθ > 0) Δθ -= 2 * Math.PI;
+						else if (fs && Δθ < 0) Δθ += 2 * Math.PI;
+
+						// 6) Compute arc length (Ramanujan's approximation for full ellipse circum)
+						const h = (rx - ry) ** 2 / (rx + ry) ** 2;
+						const fullCircLength = Math.PI * (rx + ry) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+						const frac = Math.abs(Δθ) / (2 * Math.PI);
+						const arcLength = fullCircLength * frac;
+
+						// 7) Sample the arc
+						const segments = Math.max(2, Math.round(segmentsPerUnit * arcLength));
+						const rawPoints = getArcPoints(cx, cy, rx, ry, θ1, θ1 + Δθ, segments);
+
+						// 8) Rotate each back by phi
+						const points: [number, number][] = rawPoints.map(([x, y]) => {
+							const dx = x - cx;
+							const dy = y - cy;
+							return [
+								cx + (Math.cos(phi) * dx - Math.sin(phi) * dy),
+								cy + (Math.sin(phi) * dx + Math.cos(phi) * dy),
+							];
+						});
+						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'Z') {
 						const firstIns = instructions[0];
 						const firstX = firstIns?.cmd === 'M' ? firstIns.x : 0;

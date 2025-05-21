@@ -37,9 +37,12 @@ export type PathInstruction =
 			rel: boolean;
 			rx: number;
 			ry: number;
-			xAxisRotation: number;
-			largeArcFlag: 0 | 1;
-			sweepFlag: 0 | 1;
+			/** xAxisRotation */
+			rot: number;
+			/** largeArcFlag */
+			fa: 0 | 1;
+			/** sweepFlag */
+			fs: 0 | 1;
 			x: number;
 			y: number;
 	  }
@@ -145,9 +148,9 @@ export function keyPathInstruction({ cmd, rel, vals }: PathInstructionRaw): Path
 				rel,
 				rx: vals[0] ?? 0,
 				ry: vals[1] ?? 0,
-				xAxisRotation: vals[2] ?? 0,
-				largeArcFlag: vals[3] ? 1 : 0,
-				sweepFlag: vals[4] ? 1 : 0,
+				rot: vals[2] ?? 0,
+				fa: vals[3] ? 1 : 0,
+				fs: vals[4] ? 1 : 0,
 				x: vals[5] ?? 0,
 				y: vals[6] ?? 0,
 			};
