@@ -1,5 +1,5 @@
 import { parsePath, PathInstruction } from './svg-path';
-import getBezierPoints from 'adaptive-bezier-curve';
+import { getCubicBezierPoints, getQuadraticBezierPoints } from './bezier-points';
 
 export type HPGLCommand = 'PU' | 'PD' | 'PA' | `SP${number}`;
 export type HPGLInstruction = [HPGLCommand, ...number[]];
@@ -41,6 +41,7 @@ export function svgToHPGL(
 ): HPGLProgram {
 	const hpgl: HPGLProgram = [['PA']];
 	const { segmentsPerUnit = 1 } = options;
+	const bezRes = segmentsPerUnit * 10;
 
 	const strokeEls = getSVGStrokedElements(svg);
 
@@ -114,6 +115,7 @@ export function svgToHPGL(
 				if (!d) return;
 				let currX = 0;
 				let currY = 0;
+				let quadC1: [number, number] = [0, 0]; // only kept for consecutive T cmds
 				function updateCurr(ins: PathInstruction) {
 					if ('x' in ins) currX = ins.x;
 					if ('y' in ins) currY = ins.y;
@@ -131,28 +133,41 @@ export function svgToHPGL(
 					} else if (cmd === 'V') {
 						hpgl.push(PD(tf, currX, ins.y));
 					} else if (cmd === 'C') {
-						const points = getBezierPoints(
+						const points = getCubicBezierPoints(
 							[currX, currY],
 							[ins.x1, ins.y1],
 							[ins.x2, ins.y2],
 							[ins.x, ins.y],
-							10
+							bezRes
 						);
 						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'S') {
-						// If the previous command was cubic Bézier (C or S): Reflect the second control point.
+						// If the previous command was cubic bézier (C or S): Reflect the second control point.
 						// If the previous command was anything else: Treat the first control point as the current point.
-						const preCmd = instructions[insI - 1];
-						const preHasC2 = preCmd && 'x2' in preCmd && 'y2' in preCmd;
-						const x1 = preHasC2 ? 2 * currX - preCmd.x2 : currX;
-						const y1 = preHasC2 ? 2 * currY - preCmd.y2 : currY;
-						const points = getBezierPoints([currX, currY], [x1, y1], [ins.x2, ins.y2], [ins.x, ins.y], 10);
+						const preIns = instructions[insI - 1];
+						const preHasC2 = preIns && 'x2' in preIns && 'y2' in preIns;
+						const x1 = preHasC2 ? 2 * currX - preIns.x2 : currX;
+						const y1 = preHasC2 ? 2 * currY - preIns.y2 : currY;
+						const points = getCubicBezierPoints(
+							[currX, currY],
+							[x1, y1],
+							[ins.x2, ins.y2],
+							[ins.x, ins.y],
+							bezRes
+						);
 						hpgl.push(...PUD(tf, points));
-						updateCurr(ins);
 					} else if (cmd === 'Q') {
-						// TODO
+						quadC1 = [ins.x1, ins.y1];
+						const points = getQuadraticBezierPoints([currX, currY], quadC1, [ins.x, ins.y], bezRes);
+						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'T') {
-						// TODO
+						// If the previous command was quadratic bézier (Q or T): Reflect the first control point.
+						// If the previous command was anything else: Treat the first control point as the current point.
+						const preCmd = instructions[insI - 1]?.cmd;
+						const preWasQuad = preCmd === 'Q' || preCmd === 'T';
+						quadC1 = preWasQuad ? [2 * currX - quadC1[0], 2 * currY - quadC1[1]] : [currX, currY];
+						const points = getQuadraticBezierPoints([currX, currY], quadC1, [ins.x, ins.y], bezRes);
+						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'A') {
 						// TODO
 					} else if (cmd === 'Z') {

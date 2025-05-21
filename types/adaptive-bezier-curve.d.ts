@@ -1,5 +1,5 @@
 declare module 'adaptive-bezier-curve' {
-	function getBezierPoints(
+	function getCubicBezierPoints(
 		start: [number, number],
 		c1: [number, number],
 		c2: [number, number],
@@ -7,5 +7,5 @@ declare module 'adaptive-bezier-curve' {
 		scale?: number
 	): Array<[number, number]>;
 
-	export = getBezierPoints;
+	export = getCubicBezierPoints;
 }
