@@ -9,13 +9,13 @@ export function buildHPGL(program: HPGLProgram, prefix = '', suffix = ''): strin
 	return prefix + program.map(([cmd, ...vals]) => cmd + vals.join(',') + ';').join('') + suffix;
 }
 
-export type PenSelectors = {
+export type PenSelector = {
 	pen: number;
 	/** Should use values retrieved by getSvgStrokeColors(), `true` selects all stroked elements */
 	stroke: true | string | string[];
 	/** Gets inserted after `SP1` (select pen x) and before any commands with that tool */
 	cmd?: string;
-}[];
+};
 
 export type SVGtoHPGLOptions = {
 	/** Number of line segments per og unit any curves will be split into */
@@ -36,7 +36,7 @@ export type SVGtoHPGLOptions = {
 
 export function svgToHPGL(
 	svg: SVGSVGElement,
-	pens: PenSelectors = [{ pen: 1, stroke: true }],
+	pens: PenSelector[] = [{ pen: 1, stroke: true }],
 	options: SVGtoHPGLOptions = {}
 ): HPGLProgram {
 	const hpgl: HPGLProgram = [['PA']];
@@ -397,7 +397,7 @@ export function getSVGStrokedElements(svg: SVGSVGElement): Record<string, SVGGra
 
 function grabElementsByStroke(
 	strokeEls: ReturnType<typeof getSVGStrokedElements>,
-	stroke: PenSelectors[number]['stroke']
+	stroke: PenSelector['stroke']
 ): SVGGraphicsElement[] {
 	if (typeof stroke === 'string') {
 		return strokeEls[stroke] || [];
