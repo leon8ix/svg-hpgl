@@ -1,6 +1,4 @@
-// M224.4,410.1,204,363s44.151-25.489,47.337,3.186,23.669,18.662,23.669,18L254.893,423.3
-
-import type { FixedArray, KeysOfUnion } from './ts-utils';
+import type { FixedArray, KeysOfUnion } from './utils';
 
 const cmdLengths = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 } as const satisfies Record<
 	string,
@@ -50,12 +48,12 @@ export type PathInstruction =
 	| { cmd: 'Z'; rel: false };
 
 /** All-in-one SVG path parsing function, returns `readable`, `absolute` path commands */
-export function parsePath(d: string) {
-	return toAbsolute(parsePathSyntax(d).map(ins => keyPathInstruction(ins)));
+export function parseSvgPath(d: string) {
+	return toAbsolute(parseSvgPathSyntax(d).map(ins => keyPathInstruction(ins)));
 }
 
 /** Basic decoding of path syntax to raw instructions */
-export function parsePathSyntax(d: string): PathInstructionRaw[] {
+export function parseSvgPathSyntax(d: string): PathInstructionRaw[] {
 	const pathSeq: PathInstructionRaw[] = [];
 	let cmd: PathCommand = 'M';
 	let rel = false;
@@ -124,7 +122,7 @@ function isDigit(c: string): boolean {
 	return c === String(parseInt(c));
 }
 
-export function keyPathInstruction({ cmd, rel, vals }: PathInstructionRaw): PathInstruction {
+function keyPathInstruction({ cmd, rel, vals }: PathInstructionRaw): PathInstruction {
 	switch (cmd) {
 		case 'M':
 			return mapArrayIndex(vals, ['x', 'y'], 0, { cmd, rel });
