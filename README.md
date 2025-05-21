@@ -1,12 +1,16 @@
 # SVG-HPGL
 
-A node package for converting SVG to HP-GL. Splits curves into small segments.
+A node package for converting SVG to HP-GL. Used for reading out movement instructions for cutting machines and similar devices. Splits curves into small line segments.
 
 ## ToDo
 
--   None
+-   Implement sorting functions for optimizing cutting order
 
 ## Versions
+
+### 1.0.0 (250521)
+
+-   Bumped major version to 1, as the package is now fully working and supports all intended SVG and path features
 
 ### 0.16.0 (250521)
 
