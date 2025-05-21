@@ -4,9 +4,13 @@ A node package for converting SVG to HP-GL. Splits curves into small segments.
 
 ## ToDo
 
--   Fix Z command not working for multi-paths
+-   None
 
 ## Versions
+
+### 0.16.0 (250521)
+
+-   Made Z command work for multiple paths in the same d att
 
 ### 0.15.0 (250521)
 

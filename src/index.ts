@@ -122,6 +122,8 @@ export function svgToHPGL(
 				// <path>
 				const d = el.getAttribute('d');
 				if (!d) return;
+				let startX = 0;
+				let startY = 0;
 				let currX = 0;
 				let currY = 0;
 				let quadC1: [number, number] = [0, 0]; // only kept for consecutive T cmds
@@ -134,6 +136,8 @@ export function svgToHPGL(
 				instructions.forEach((ins, insI) => {
 					const { cmd } = ins;
 					if (cmd === 'M') {
+						startX = ins.x;
+						startY = ins.y;
 						hpgl.push(PU(tf, ins.x, ins.y));
 					} else if (cmd === 'L') {
 						hpgl.push(PD(tf, ins.x, ins.y));
@@ -241,10 +245,7 @@ export function svgToHPGL(
 						});
 						hpgl.push(...PUD(tf, points));
 					} else if (cmd === 'Z') {
-						const firstIns = instructions[0];
-						const firstX = firstIns?.cmd === 'M' ? firstIns.x : 0;
-						const firstY = firstIns?.cmd === 'M' ? firstIns.y : 0;
-						hpgl.push(PD(tf, firstX, firstY));
+						hpgl.push(PD(tf, startX, startY));
 					}
 					updateCurr(ins);
 				});
