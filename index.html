@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>SVG to HP-GL Test Page</title>
 		<script type="module" defer>
-			import { buildHPGL, svgToHPGL, drawHPGL } from './src/index.ts';
+			import { buildHPGL, svgToHPGL, drawHPGLtoCanvas, getHPGLasSVG } from './src/index.ts';
 			window.buildHPGL = buildHPGL;
 			window.svgToHPGL = svgToHPGL;
 
@@ -13,6 +13,13 @@
 			const output = document.getElementById('output');
 			const svgContainer = document.getElementById('svg');
 			const canvas = document.getElementById('canvas');
+			const svgOut = document.getElementById('svgOut');
+			const pens = [
+				{ pen: 1, stroke: 'rgb(0, 0, 255)' },
+				{ pen: 1, stroke: 'rgb(0, 255, 255)' },
+				{ pen: 2, stroke: 'rgb(255, 0, 0)' },
+				{ pen: 2, stroke: 'rgb(255, 0, 255)' },
+			];
 
 			input.value = svg.innerHTML;
 
@@ -28,20 +35,15 @@
 				svgContainer.innerHTML = input.value;
 				const svg = svgContainer.querySelector('svg');
 				if (!svg) return console.warn('Invalid SVG supplied');
-				const hpglProg = svgToHPGL(
-					svg,
-					[
-						{ pen: 1, stroke: 'rgb(0, 0, 255)' },
-						{ pen: 1, stroke: 'rgb(0, 255, 255)' },
-						{ pen: 2, stroke: 'rgb(255, 0, 0)' },
-						{ pen: 2, stroke: 'rgb(255, 0, 255)' },
-					],
-					vals
-				);
+				const hpglProg = svgToHPGL(svg, pens, vals);
 				const hpglStr = buildHPGL(hpglProg);
 				// console.log(hpglStr, hpglProg);
 				output.innerText = hpglStr;
-				drawHPGL(canvas, hpglProg, 297 * (vals.res || 1), 210 * (vals.res || 1));
+				const w = 297 * (vals.res || 1);
+				const h = 210 * (vals.res || 1);
+				// drawHPGLtoCanvas(canvas, hpglProg, w, h);
+				const viewBox = vals.autoBBox ? undefined : { x: 0, y: 0, w, h };
+				svgOut.innerHTML = getHPGLasSVG(hpglProg, { pens, viewBox });
 			}
 
 			document.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', update));
@@ -67,6 +69,8 @@
 			<input type="checkbox" data-val id="mirrorY" />
 			<label for="res">res</label>
 			<input type="number" data-val value="3" min="0.5" max="5" step="0.5" id="res" />
+			<label for="autoBBox">autoBBox</label>
+			<input type="checkbox" data-val id="autoBBox" />
 		</div>
 		<div style="display: flex; gap: 1em; margin: 1em 0">
 			<div id="svg">
@@ -116,13 +120,16 @@
 						<path d="m200,100,20,20v10h-20c10,10,20,10,10,20s30,20,40,40q0,-30,10-20t10-20v-50Z" />
 						<path d="m200,50a20,30,10,1,0,60,-10" />
 					</g>
-					<circle fill="transparent" cx="12.5" cy="12.5" r="2.5" stroke="cyan" stroke-width="1"></circle>
-					<circle fill="transparent" cx="284.5" cy="12.5" r="2.5" stroke="cyan" stroke-width="1"></circle>
-					<circle fill="transparent" cx="12.5" cy="197.5" r="2.5" stroke="cyan" stroke-width="1"></circle>
-					<circle fill="transparent" cx="284.5" cy="197.5" r="2.5" stroke="cyan" stroke-width="1"></circle>
+					<g stroke="cyan" stroke-width="1" fill="none">
+						<circle cx="12.5" cy="12.5" r="2.5"></circle>
+						<circle cx="284.5" cy="12.5" r="2.5"></circle>
+						<circle cx="12.5" cy="197.5" r="2.5"></circle>
+						<circle cx="284.5" cy="197.5" r="2.5"></circle>
+					</g>
 				</svg>
 			</div>
-			<canvas id="canvas"></canvas>
+			<!-- <canvas id="canvas"></canvas> -->
+			<div id="svgOut"></div>
 		</div>
 		<output id="output" style="word-break: break-all; display: block"></output>
 		<style>
@@ -132,7 +139,6 @@
 			svg,
 			canvas {
 				background-color: white;
-				outline: solid 1px #767676;
 				width: 38vw;
 				height: auto;
 			}
